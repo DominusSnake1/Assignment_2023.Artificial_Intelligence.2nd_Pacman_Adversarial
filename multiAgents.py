@@ -53,64 +53,139 @@ class MultiAgentSearchAgent(Agent):
 
 
 class MinimaxAgent(MultiAgentSearchAgent):
-    """
-    Your minimax agent (exercise 1)
-    """
+    def maxValue(self, state, depth):
+        if state.isWinningState() or state.isLosingState() or depth == self.depth: return self.evaluationFunction(state)
+
+        v = float("-inf")
+
+        for possibleAction in state.getPossibleActions(0):
+            successor = state.generateNextState(0, possibleAction)
+            v = max(v, self.minValue(successor, depth, 1))
+        return v
+
+    def minValue(self, state, depth, agentIndex):
+        if state.isWinningState() or state.isLosingState(): return self.evaluationFunction(state)
+
+        v = float("inf")
+        numberOfAgents = state.getNumAgents()
+
+        if agentIndex == numberOfAgents: return self.maxValue(state, depth + 1)
+
+        for possibleAction in state.getPossibleActions(agentIndex):
+            successor = state.generateNextState(agentIndex, possibleAction)
+            v = min(v, self.minValue(successor, depth, agentIndex + 1))
+        return v
 
     def getAction(self, gameState):
-        """
-        Returns the minimax action from the current gameState using self.depth
-        and self.evaluationFunction.
+        legalActions = gameState.getPossibleActions(0)
 
-        Here are some method calls that might be useful when implementing minimax.
+        scores = []
+        for action in legalActions:
+            scores.append(self.minValue(gameState.generateNextState(0, action), 0, 1))
+        bestScore = max(scores)
 
-        gameState.getPossibleActions(agentIndex):
-        Returns a list of legal actions for an agent
-        agentIndex=0 means Pacman, ghosts are >= 1
+        bestIndices = []
+        for index in range(len(scores)):
+            if scores[index] == bestScore: bestIndices.append(index)
 
-        gameState.generateNextState(agentIndex, action):
-        Returns the successor game state after an agent takes an action
+        randomIndex = random.choice(bestIndices)
 
-        gameState.getNumAgents():
-        Returns the total number of agents in the game
-
-        gameState.isWinningState():
-        Returns whether or not the game state is a winning state
-
-        gameState.isLosingState():
-        Returns whether or not the game state is a losing state
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return legalActions[randomIndex]
+        # util.raiseNotDefined()
 
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
-    """
-    Your minimax agent with alpha-beta pruning (exercise 2)
-    """
+
+    def maxValue(self, state, agentIndex, depth, a, b):
+        if state.isWinningState() or state.isLosingState() or depth == self.depth: return self.evaluationFunction(state)
+
+        v = float('-inf')
+        possibleActions = state.getPossibleActions(agentIndex)
+
+        for action in possibleActions:
+            successor = state.generateNextState(agentIndex, action)
+            v = max(v, self.minValue(successor, agentIndex + 1, depth, a, b))
+
+            if v > b: return v
+
+            a = max(a, v)
+        return v
+
+    def minValue(self, state, agentIndex, depth, a, b):
+        if state.isWinningState() or state.isLosingState(): return self.evaluationFunction(state)
+
+        v = float('inf')
+        possibleActions = state.getPossibleActions(agentIndex)
+
+        for action in possibleActions:
+            successor = state.generateNextState(agentIndex, action)
+            numberOfAgents = state.getNumAgents()
+
+            if agentIndex == numberOfAgents - 1:
+                v = min(v, self.maxValue(successor, 0, depth + 1, a, b))
+            else:
+                v = min(v, self.minValue(successor, agentIndex + 1, depth, a, b))
+
+            if v < a: return v
+
+            b = min(b, v)
+        return v
 
     def getAction(self, gameState):
-        """
-        Returns the minimax action using self.depth and self.evaluationFunction
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        bestAction = None
+        bestValue = float('-inf')
+        a = float('-inf')
+        b = float('inf')
+
+        possibleActions = gameState.getPossibleActions(0)
+
+        for action in possibleActions:
+            successor = gameState.generateNextState(0, action)
+            value = self.minValue(successor, 1, 0, a, b)
+
+            if value > bestValue:
+                bestValue = value
+                bestAction = action
+            a = max(a, bestValue)
+        return bestAction
+        # util.raiseNotDefined()
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
-    """
-      Your expectimax agent (exercise 3)
-    """
+    def maxValue(self, state, depth):
+        if state.isWinningState() or state.isLosingState() or depth == self.depth:
+            return state.getScore()
+
+        v = float("-inf")
+
+        for action in state.getPossibleActions():
+            successor_state = state.generateNextState(state, action)
+            v = max(v, self.expectValue(successor_state, depth + 1))
+        return v
+
+    def expectValue(self, state, depth):
+        if state.isWinningState() or state.isLosingState():
+            return state.getScore()
+        v = 0
+        actions = state.getPossibleActions()
+        p = 1.0 / len(actions)  # Uniform probability for each action
+        for action in actions:
+            successor_state = state.generateNextState(state, action)
+            v += p * self.maxValue(successor_state, depth)
+        return v
 
     def getAction(self, gameState):
-        """
-        Returns the expectimax action using self.depth and self.evaluationFunction
+        best_action = None
+        best_score = float("-inf")
+        for action in gameState.getPossibleActions():
+            successor_state = gameState.generateNextState(gameState, action)
+            score = self.expectValue(successor_state, 0)
+            if score > best_score:
+                best_score = score
+                best_action = action
 
-        All ghosts should be modeled as choosing uniformly at random from their
-        legal moves.
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return best_action
+        # util.raiseNotDefined()
 
 
 def betterEvaluationFunction(currentGameState):
