@@ -20,7 +20,7 @@ python autograder.py -q q2
 ```bash
 python autograder.py -q q2 --no-graphics
 ```
-## <ins>Question 3</ins>: <br>  Expectimax
+## <ins>Question 3</ins>: <br> Expectimax
 #### Run the code:
 ```bash
 python autograder.py -q q3
@@ -40,4 +40,17 @@ python pacman.py -p AlphaBetaAgent -l trappedClassic -a depth=3 -q -n 10
 #### Expectimax:
 ```bash
 python pacman.py -p ExpectimaxAgent -l trappedClassic -a depth=3 -q -n 10
+```
+## <ins>Question 4</ins>: <br> Evaluation
+#### Run the code:
+```bash
+python autograder.py -q q4
+```
+#### Run the code faster:
+```bash
+python autograder.py -q q4 --no-graphics
+```
+#### Agent in Alphabeta
+```bash
+python pacman.py -p AlphaBetaAgent -a evalFn=better,depth=2 -l smallClassic -k 2
 ```

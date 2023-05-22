@@ -152,51 +152,74 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
-    def maxValue(self, state, depth):
-        if state.isWinningState() or state.isLosingState() or depth == self.depth:
-            return state.getScore()
+    def maxValue(self, agentIndex, depth, state):
+        if depth == 0 or state.isWinningState() or state.isLosingState(): return self.evaluationFunction(state)
 
-        v = float("-inf")
+        v = float('-inf')
+        bestAction = None
+        possibleActions = state.getPossibleActions(agentIndex)
 
-        for action in state.getPossibleActions():
-            successor_state = state.generateNextState(state, action)
-            v = max(v, self.expectValue(successor_state, depth + 1))
+        for action in possibleActions:
+            successor = state.generateNextState(agentIndex, action)
+            score = self.expectValue(1, depth, successor)
+
+            if score > v:
+                v = score
+                bestAction = action
+
+        if depth == self.depth:
+            return bestAction
+
         return v
 
-    def expectValue(self, state, depth):
-        if state.isWinningState() or state.isLosingState():
-            return state.getScore()
+    def expectValue(self, agentIndex, depth, state):
+        if depth == 0 or state.isWinningState() or state.isLosingState(): return self.evaluationFunction(state)
+
         v = 0
-        actions = state.getPossibleActions()
-        p = 1.0 / len(actions)  # Uniform probability for each action
-        for action in actions:
-            successor_state = state.generateNextState(state, action)
-            v += p * self.maxValue(successor_state, depth)
+        numberOfAgents = state.getNumAgents()
+        possibleActions = state.getPossibleActions(agentIndex)
+        p = 1 / len(possibleActions)
+
+        for action in possibleActions:
+            successor = state.generateNextState(agentIndex, action)
+
+            if agentIndex == numberOfAgents - 1:
+                score = p * self.maxValue(0, depth - 1, successor)
+            else:
+                score = p * self.expectValue(agentIndex + 1, depth, successor)
+
+            v += score
+
         return v
 
     def getAction(self, gameState):
-        best_action = None
-        best_score = float("-inf")
-        for action in gameState.getPossibleActions():
-            successor_state = gameState.generateNextState(gameState, action)
-            score = self.expectValue(successor_state, 0)
-            if score > best_score:
-                best_score = score
-                best_action = action
-
-        return best_action
+        return self.maxValue(0, self.depth, gameState)
         # util.raiseNotDefined()
 
 
 def betterEvaluationFunction(currentGameState):
-    """
-    Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
-    evaluation function (exercise 4).
+    score = currentGameState.getScore()
+    pacmanPosition = currentGameState.getPacmanPosition()
+    ghostAgents = range(1, currentGameState.getNumAgents())
+    ghostDistances = []
 
-    DESCRIPTION: <write something here so we know what you did>
-    """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    for ghost in ghostAgents:
+        ghostState = currentGameState.getGhostState(ghost)
+        ghostPos = ghostState.getPosition()
+        distance = manhattanDistance(pacmanPosition, ghostPos)
+        ghostDistances.append(distance)
+
+    closestGhostDistance = min(ghostDistances)
+
+    threateningGhosts = 0
+    for distance in ghostDistances:
+        if distance <= 2: threateningGhosts += 1
+
+    evaluation = score - closestGhostDistance - threateningGhosts
+
+    return evaluation
+
+    # util.raiseNotDefined()
 
 
 # Abbreviation
